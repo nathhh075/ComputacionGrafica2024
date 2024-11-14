@@ -1,0 +1,364 @@
+var scene = null,
+    camera = null,
+    renderer = null,
+    controls = null,
+    myLight=null,
+    pasto=null,
+    textureStreet= null;
+
+const size = 200,
+    division = 200;
+
+    function startScene(){
+        scene  = new THREE.Scene();
+        scene.background = new THREE.Color(0xaed7f8);
+        camera = new THREE.PerspectiveCamera( 75,  // Angulo de Vision (Abajo o Arriba)
+                                            window.innerWidth / window.innerHeight, // Relación Aspecto (16:9)
+                                            0.1, // Mas Cerca (no renderiza)
+                                            1000); // Mas lejos
+        renderer = new THREE.WebGLRenderer({canvas: document.getElementById("app")});
+        renderer.setSize( window.innerWidth, window.innerHeight );
+        document.body.appendChild( renderer.domElement );
+     
+        //orbit controls
+        controls = new THREE.OrbitControls(camera, renderer.domElement);
+        camera.position.set(0, 5, 10);
+        controls.update();
+    
+        //orbit helper
+        const gridHelper = new THREE.GridHelper( size, division );
+        //scene.add( gridHelper );
+
+        camera.position.z = 60;
+     
+        createLight('directionalLight');
+        createLight('ambient');
+        createLight('ambient');
+ 
+        createHighWay();
+        createLamp(40,-40);
+        //addPoles();
+        //addBuildins();
+        createCar(75,93);
+        createCar(-10,93);
+    
+        const geometry2 = new THREE.PlaneGeometry( 200, 200 );
+        const material2 = new THREE.MeshStandardMaterial( {color: 0x2ec21c, side: THREE.DoubleSide} );
+        pasto = new THREE.Mesh( geometry2, material2 );
+        pasto.rotateX(Math.PI / 2);
+        pasto.position.y=-0.1;
+        scene.add( pasto );
+
+        createUI();
+        loadObjMtl();
+        animate();
+        
+    } 
+    
+    function addBuildins(){
+        //parte de arriba
+         //grande derecha
+         createBuildings(45,25,50,60,50,40,3);
+         //grande izq
+         createBuildings(45,35,-50,60,70,55,4);
+         //mitad atrás
+         createBuildings(60,15,4,30,30,45,6);
+         //adelante derecha
+         createBuildings(28,20,-4,30,40,30,2);
+         //adelante izq
+         createBuildings(28,35,20,30,70,15,5);
+
+         //parte de abajo
+         //grande derecha
+         createBuildings(-45,30,55,60,60,40,5);
+         //delante izq
+         createBuildings(-74,20,-64,30,40,27.5,3);
+         //atrás izq
+         createBuildings(-28,12.5,-64,35,25,27.5, 1);
+         //adelante mitad izq
+         createBuildings(-61.5,14,-30,35,28,27.5,6);
+         //atrás mitad izq
+         createBuildings(-25.50,25,-30,30,50,27.5,5);
+         //adelante mitad derecha
+         createBuildings(-61,35,10,35,70,45,4);
+         //atrás mitad derecha
+         createBuildings(-25,17.5,15,25,35,35,2);
+    }
+
+    function createBuildings (px, py, pz, sizex, sizey, sizez, textures) {  
+        cube=null 
+        var t =null, c=null; 
+        const geometry = new THREE.BoxGeometry( sizex, sizey,sizez ); 
+        switch (textures){
+          case 1: 
+            t = new THREE.TextureLoader().load('../src/img/ciudad/Building.jpg');  
+            c =0x454546;
+            break;
+          case 2:
+            t = new THREE.TextureLoader().load('../src/img/ciudad/ChrismasBuilding.jpg'); 
+            c = 0x8c8c8c;
+           break; 
+          case 3:
+            t = new THREE.TextureLoader().load('../src/img/ciudad/edificio1.jpeg');         
+            c= 0x454546;
+           break;
+            case 4:
+            t = new THREE.TextureLoader().load('../src/img/ciudad/edificio2.jpg');        
+            c= 0x666666;
+            break;
+          case 5:
+            t = new THREE.TextureLoader().load('../src/img/ciudad/edificio3.jpg');        
+            c= 0x666666;
+            break;
+          case 6:
+            t = new THREE.TextureLoader().load('../src/img/ciudad/petsBuilding.jpg');
+            c= 0x8c8c8c;
+            break;
+            
+        }
+        var materialCube = [new THREE.MeshStandardMaterial( {color: 0xffffff, map: t, side: THREE.DoubleSide}),
+                            new THREE.MeshStandardMaterial( {color: 0xffffff, map: t, side: THREE.DoubleSide}),
+                            new THREE.MeshStandardMaterial( {color:c,  side: THREE.DoubleSide}),
+                            new THREE.MeshStandardMaterial( {color: 0xffffff, map: t, side: THREE.DoubleSide}),
+                            new THREE.MeshStandardMaterial( {color: 0xffffff, map: t, side: THREE.DoubleSide}),
+                            new THREE.MeshStandardMaterial( {color: 0xffffff, map: t, side: THREE.DoubleSide})
+        ];
+
+        
+        cube = new THREE.Mesh( geometry, materialCube ); 
+        cube.position.y=py;
+        cube.position.x=px;
+        cube.position.z=pz;
+        scene.add( cube );
+
+      
+
+    }
+
+    function createHighWay(){
+      
+      createStreet(45,90,1,'normal','90');
+      createStreet(-45,90,1.3,'normal','90');
+      createStreet(-45,-90,1,'normal','90');
+      createStreet(45,-90,1.3,'normal','90');
+      
+      createStreet(90,45,1,'normal','');
+      createStreet(90,-45,1.3,'normal','');
+      createStreet(-90,-45, 1,'normal','');
+      createStreet(-90,45,1.3,'normal','');
+
+      createStreet(0,-45,0.8,'normal','');
+      createStreet(0,45,0.5,'normal','');
+
+      createStreet(88,-88,1.5,'corner','');
+      createStreet(-88,-88,1.5,'corner','270');
+      createStreet(88,88,1.5,'corner','90');
+      createStreet(-88,88, 1.5,'corner','180');
+    }
+
+    function createStreet(px,pz,py,textura,rotacion){
+        street=null,  py=null, geometry=null;
+
+        switch(textura){
+            case 'normal':
+               var t=new THREE.TextureLoader().load('../src/img/ciudad/street1.png');
+               geometry = new THREE.PlaneGeometry( 20, 130 );
+               
+               
+            break;
+
+            case 'corner':
+              var  t=new THREE.TextureLoader().load('../src/img/ciudad/street2.png');
+              geometry= new THREE.PlaneGeometry( 23, 37 );
+            break;
+        }
+
+        
+        
+        //geometry= new THREE.PlaneGeometry( 20, 20 );
+        const material3 = new THREE.MeshStandardMaterial( {map: t, color: 0xffffff, side: THREE.DoubleSide,transparent:true } );
+        street = new THREE.Mesh( geometry, material3 );
+        street.rotateX(Math.PI / 2);
+        switch(rotacion){
+            case'90':
+                street.rotateZ(Math.PI / 2);
+            break;
+            
+            case'180':
+                street.rotateZ(Math.PI);
+            break;
+
+            case'270':
+                street.rotateZ(Math.PI*3/2);
+            break;
+        }
+
+        street.position.z=pz;
+        street.position.x=px;
+        street.position.y=py;
+        scene.add( street );
+
+    }
+
+    function createTrafficLight(px,pz){
+      poste=null, box=null;
+      
+        const geometry = new THREE.CylinderGeometry( 0.15, 0.25, 5, 500 ); 
+        const material = new THREE.MeshStandardMaterial( {color: 0x000000, metalness:1} ); 
+        poste = new THREE.Mesh( geometry, material ); 
+        poste.position.set(px,2, pz);
+        scene.add( poste );
+
+        const geometry2 = new THREE.BoxGeometry( 1, 2,0.8 ); 
+        const material2 = new THREE.MeshStandardMaterial( {color: 0x000000} ); 
+        box = new THREE.Mesh( geometry2, material2 ); 
+        box.position.set(px,4.5, pz);
+        scene.add(box);
+
+      const geometry3 = new THREE.SphereGeometry( 0.25, 320, 100 ); 
+      const material3 = new THREE.MeshStandardMaterial( { color: 0xff0000 } ); 
+      bulb1 = new THREE.Mesh( geometry3, material3 ); 
+      bulb1.position.set(px,5.1, pz+0.5);
+      scene.add( bulb1 );
+
+      const geometry4 = new THREE.SphereGeometry( 0.25, 320, 100 ); 
+      const material4 = new THREE.MeshStandardMaterial( { color: 0xffff00 } ); 
+      bulb2 = new THREE.Mesh( geometry4, material4 ); 
+      bulb2.position.set(px,4.5, pz+0.5);
+      scene.add( bulb2 );
+
+      const geometry5 = new THREE.SphereGeometry( 0.25, 320, 100 ); 
+      const material5 = new THREE.MeshStandardMaterial( { color: 0x00ff00 } ); 
+      bulb3 = new THREE.Mesh( geometry5, material5 ); 
+      bulb3.position.set(px,3.9, pz+0.5);
+      scene.add( bulb3 );
+    }
+
+      function addPoles(){
+        createTrafficLight(7,-80,'');
+
+        createLamp(-7,-40);
+        createLamp(7,0);
+        createLamp(-7,40);
+        createLamp(7,80);
+
+        createLamp(84,-80);
+        createLamp(97,-40);
+        createLamp(84,0);
+        createLamp(97,40);
+        createLamp(84,80);
+        createLamp(95,95);
+
+        createLamp(42,82);
+        createLamp(-45,82);
+        createLamp(42,-84);
+        createLamp(-45,-84);
+
+        createLamp(-84,82);
+        createLamp(-97,40);
+        createLamp(-84,0);
+        createLamp(-97,-40);
+        createLamp(-84,-80);
+
+
+    }
+
+    function createLamp(px,pz){
+      poste=null, bombillo=null;
+      const geometry = new THREE.CylinderGeometry( 0.15, 0.25, 10, 500 ); 
+      const material = new THREE.MeshStandardMaterial( {color: 0x000000, metalness:1} ); 
+      poste = new THREE.Mesh( geometry, material ); 
+      poste.position.set(px,5, pz);
+      scene.add( poste );
+
+      const geometry2 = new THREE.SphereGeometry( 1, 320, 100 ); 
+      const material2 = new THREE.MeshStandardMaterial( { color: 0xffff00 } ); 
+      bombillo = new THREE.Mesh( geometry2, material2 ); 
+      bombillo.position.set(px,10, pz);
+      scene.add( bombillo );
+
+      /*const myl = new THREE.SpotLight( 0xffffff );
+            myl.position.set( 1, 320, 5000 );
+              scene.add( myl );
+      */
+
+    }
+
+
+    function createCar(px,pz){
+      r1=null, bombillo=null, r2=null, r3=null, r4=null, c1=null;
+      
+      const geometry = new THREE.CylinderGeometry( 2, 2, 1, 50 ); 
+      const material = new THREE.MeshStandardMaterial( {color: 0x000000, metalness:1} ); 
+      r2 = new THREE.Mesh( geometry, material ); 
+      r2.position.set(px-10,2, pz);
+      r2.rotateX(Math.PI / 2);
+      scene.add( r2 );
+
+      r1 = new THREE.Mesh( geometry, material ); 
+      r1.position.set(px,2, pz);
+      r1.rotateX(Math.PI / 2);
+      scene.add( r1 );
+
+      r3 = new THREE.Mesh( geometry, material ); 
+      r3.position.set(px,2, pz-7);
+      r3.rotateX(Math.PI / 2);
+      scene.add( r3 );
+
+      r4 = new THREE.Mesh( geometry, material ); 
+      r4.position.set(px-10,2, pz-7);
+      r4.rotateX(Math.PI / 2);
+      scene.add( r4 );
+
+
+      const geometry1 = new THREE.CubeGeometry( 15,5,7 ); 
+      const material1 = new THREE.MeshStandardMaterial( {color: 0x001e4f, metalness:1} ); 
+      c1 = new THREE.Mesh( geometry1, material1 ); 
+      c1.position.set(px-5,5, pz-3.5);
+      scene.add( c1 );
+
+      const geometry2 = new THREE.CubeGeometry( 9,5,7 ); 
+      const material2 = new THREE.MeshStandardMaterial( {color: 0x001e4f, metalness:1} ); 
+      c2 = new THREE.Mesh( geometry2, material2 ); 
+      c2.position.set(px-8,8, pz-3.5);
+      scene.add( c2 );
+
+    }
+
+    function createLight(type){
+        switch (type) {
+          case "ambient":
+           myLight = new THREE.AmbientLight( 0x404040 ); // soft white light
+              scene.add( myLight );
+           break;
+      
+          case "pointLight":
+           myLight = new THREE.PointLight( 0xff0000, 1, 100 );
+           myLight.position.set( 10, 10, 10 );
+              scene.add( myLight );
+           break;
+          
+          case "directionalLight":
+            myLight = new THREE.DirectionalLight( 0xFFFFFF );
+            myLight.position.set( 10, 10, 10 );
+              scene.add( myLight );
+            break;
+      
+          case "spotLight":
+            myLight = new THREE.SpotLight( 0xffffff );
+            myLight.position.set( 10, 10, 10 );
+              scene.add( myLight );
+        break;
+        
+          default:
+            break;
+        }
+    }
+       
+
+      function animate() {
+          requestAnimationFrame(animate);
+      
+          controls.update
+          renderer.render( scene, camera );
+      }

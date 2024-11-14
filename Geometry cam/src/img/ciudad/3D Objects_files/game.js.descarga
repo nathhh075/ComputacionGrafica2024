@@ -1,0 +1,26 @@
+function createUI(){
+    var gui = new dat.GUI();
+
+    var param={
+        a: "OBJ",
+        b: "#f7f7f7",
+        c: 1
+    };
+
+    var g = gui.addFolder ('Geometry')
+    var player = g.add(param, 'a',["mujer", "hombre","Luigi", "Mario", "Mayor"]).name("Models 3D");
+
+
+    var l = gui.addFolder('Luces')
+    l.addColor(param, 'b').name("Color de luz");
+    l.add(param, 'c').min(0).max(1).step(0.1).name("intensidad de la luz");
+
+    colorLight.onChange(function(colorGet){
+        console.log(colorGet);
+        
+    player.onChange(funtion(myPlayer))
+        console.log(myPlayer);
+    });
+
+
+}
